@@ -2,9 +2,9 @@ package ru.bioengineer.weatherservice.data.datasource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 import ru.bioengineer.weatherservice.domain.datasource.IWeatherRepository;
 import ru.bioengineer.weatherservice.domain.entity.Weather;
-import ru.bioengineer.weatherservice.domain.exception.CityNotFoundException;
 
 @Service
 public class WeatherRepository implements IWeatherRepository {
@@ -19,19 +19,19 @@ public class WeatherRepository implements IWeatherRepository {
     }
 
     @Override
-    public Weather findByCityName(String cityName) {
-        return localRepository.findByCityName(cityName)
-                .map(weather -> {
+    public Mono<Weather> findByCityName(String cityName) {
+        return localRepository
+                .findByCityName(cityName)
+                .flatMap(weather -> {
                     if (weather.isWeatherOld()) return getNewWeather(cityName);
-                    else return weather;
+                    else return Mono.just(weather);
                 })
-                .orElse(getNewWeather(cityName));
+                .switchIfEmpty(getNewWeather(cityName));
     }
 
-    private Weather getNewWeather(String cityName) {
+    private Mono<Weather> getNewWeather(String cityName) {
         return networkRepository
                 .findByCityName(cityName)
-                .map(localRepository::save)
-                .orElseThrow(() -> new CityNotFoundException(cityName));
+                .flatMap(localRepository::save);
     }
 }

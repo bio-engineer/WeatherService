@@ -4,7 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 import ru.bioengineer.weatherservice.domain.datasource.IWeatherRepository;
+import ru.bioengineer.weatherservice.domain.entity.Weather;
 import ru.bioengineer.weatherservice.domain.entity.WeatherRequest;
 import ru.bioengineer.weatherservice.domain.entity.exception.CityNotFound;
 import ru.bioengineer.weatherservice.domain.entity.exception.TooManyCitiesFound;
@@ -15,14 +17,14 @@ import ru.bioengineer.weatherservice.domain.exception.TooManyCitiesFoundExceptio
  * Обрабатывает входящие запросы от пользователей
  */
 @Service
-public class WeatherService {
+public class GetWeatherUseCase {
 
-    private static final Logger logger = LoggerFactory.getLogger(WeatherService.class);
+    private static final Logger logger = LoggerFactory.getLogger(GetWeatherUseCase.class);
 
     private final IWeatherRepository weatherRepository;
 
     @Autowired
-    public WeatherService(IWeatherRepository weatherRepository) {
+    public GetWeatherUseCase(IWeatherRepository weatherRepository) {
         this.weatherRepository = weatherRepository;
     }
 
@@ -33,17 +35,11 @@ public class WeatherService {
      *
      * @see IWeatherRepository
      */
-    public Object handleRequest(WeatherRequest request) {
-        try {
-            return weatherRepository.findByCityName(request.getCityName());
-        } catch (CityNotFoundException e) {
-            logger.debug(e.getMessage());
-            return new CityNotFound(e);
-        } catch (TooManyCitiesFoundException e) {
-            logger.debug(e.getMessage());
-            return new TooManyCitiesFound(e);
-        }
+    public Mono<Weather> execute(WeatherRequest request) {
+        return weatherRepository
+                .findByCityName(request.getCityName())
+                .doOnError(CityNotFoundException.class, CityNotFound::new)
+                .doOnError(TooManyCitiesFoundException.class, TooManyCitiesFound::new);
     }
-
 
 }
