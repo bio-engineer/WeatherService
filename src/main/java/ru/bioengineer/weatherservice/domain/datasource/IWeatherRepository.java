@@ -1,32 +1,42 @@
 package ru.bioengineer.weatherservice.domain.datasource;
 
+import reactor.core.publisher.Mono;
 import ru.bioengineer.weatherservice.domain.entity.Weather;
-import ru.bioengineer.weatherservice.domain.exception.CityNotFoundException;
 import ru.bioengineer.weatherservice.domain.exception.TooManyCitiesFoundException;
-
-import java.util.Optional;
 
 /**
  * Репозиторий погоды
  */
 public interface IWeatherRepository {
 
-    Weather findByCityName(String cityName) throws TooManyCitiesFoundException, CityNotFoundException;
+    /**
+     * Ищет погоду в указанном городе
+     * Может возвращать Mono.error c TooManyCitiesFoundException
+     *
+     * @see TooManyCitiesFoundException
+     */
+    Mono<Weather> findByCityName(String cityName);
 
     /**
      * Локальный репозиторий с погодой
      */
     interface ILocalRepository {
 
-        Weather save(Weather weather);
+        Mono<Weather> save(Weather weather);
 
-        Optional<Weather> findByCityName(String cityName) throws TooManyCitiesFoundException;
+        /**
+         * Ищет погоду в локальном репозитории
+         * Может возвращать Mono.error c TooManyCitiesFoundException
+         *
+         * @see TooManyCitiesFoundException
+         */
+        Mono<Weather> findByCityName(String cityName);
     }
 
     /**
      * Репозиторий внешнего сервиса
      */
     interface INetworkRepository {
-        Optional<Weather> findByCityName(String cityName);
+        Mono<Weather> findByCityName(String cityName);
     }
 }

@@ -5,13 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
+import reactor.core.publisher.Mono;
 import ru.bioengineer.weatherservice.data.entity.openweather.ResponseEntityDTO;
 import ru.bioengineer.weatherservice.domain.datasource.IWeatherRepository;
 import ru.bioengineer.weatherservice.domain.entity.Weather;
 import ru.bioengineer.weatherservice.domain.utils.RestService;
-
-import java.util.Optional;
 
 @Service
 public class NetworkRepository implements IWeatherRepository.INetworkRepository {
@@ -28,17 +26,11 @@ public class NetworkRepository implements IWeatherRepository.INetworkRepository 
     }
 
     @Override
-    public Optional<Weather> findByCityName(String cityName) {
-        try {
-            Weather weather = restService
-                    .sendGet(getUrl(cityName), ResponseEntityDTO.class)
-                    .convert();
-
-            return Optional.of(weather);
-        } catch (HttpClientErrorException.NotFound e) {
-            logger.error(e.getMessage());
-            return Optional.empty();
-        }
+    public Mono<Weather> findByCityName(String cityName) {
+        return Mono.fromCallable(() -> restService
+                .sendGet(getUrl(cityName), ResponseEntityDTO.class)
+                .convert()
+        );
     }
 
     private String getUrl(String cityName) {

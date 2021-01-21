@@ -4,15 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 import ru.bioengineer.weatherservice.data.datasource.dao.*;
 import ru.bioengineer.weatherservice.data.entity.db.*;
 import ru.bioengineer.weatherservice.domain.datasource.IWeatherRepository;
 import ru.bioengineer.weatherservice.domain.entity.City;
 import ru.bioengineer.weatherservice.domain.entity.Weather;
 import ru.bioengineer.weatherservice.domain.exception.TooManyCitiesFoundException;
-
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Хранит информацию о погоде в БД
@@ -44,47 +42,45 @@ public class LocalRepository implements IWeatherRepository.ILocalRepository {
     }
 
     @Override
-    public Weather save(Weather weather) {
-        City city = weather.getCity();
+    public Mono<Weather> save(Weather weather) {
+        return Mono
+                .fromCallable(() -> {
+                    City city = weather.getCity();
 
-        CoordinatesDTO coordinatesDTO = getCoordinates(city);
-        WindDTO windDTO = getWind(weather, city.getId());
-        ParametersDTO paramsDTO = getParams(weather, city.getId());
-        WeatherDTO weatherDTO = getWeather(weather, city);
-        CityDTO cityDTO = getCityDTO(weather, city, coordinatesDTO);
+                    CoordinatesDTO coordinatesDTO = getCoordinates(city);
+                    WindDTO windDTO = getWind(weather, city.getId());
+                    ParametersDTO paramsDTO = getParams(weather, city.getId());
+                    WeatherDTO weatherDTO = getWeather(weather, city);
+                    CityDTO cityDTO = getCityDTO(weather, city, coordinatesDTO);
 
-        try {
-            coordinatesDAO.saveAndFlush(coordinatesDTO);
-            windDAO.saveAndFlush(windDTO);
-            parametersDAO.saveAndFlush(paramsDTO);
-            weatherDAO.saveAndFlush(weatherDTO);
-            cityDAO.saveAndFlush(cityDTO);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-        }
+                    coordinatesDAO.saveAndFlush(coordinatesDTO);
+                    windDAO.saveAndFlush(windDTO);
+                    parametersDAO.saveAndFlush(paramsDTO);
+                    weatherDAO.saveAndFlush(weatherDTO);
+                    cityDAO.saveAndFlush(cityDTO);
 
-        return cityDAO.findById(city.getId())
-                .map(CityDTO::convert)
-                .orElseThrow(() -> new RuntimeException("Error while saving to DB"));
+                    return city.getId();
+                })
+                .map(cityId -> cityDAO.findById(cityId)
+                        .map(CityDTO::convert)
+                        .orElseThrow(() -> new RuntimeException("Error while saving to DB"))
+                );
+
     }
 
 
     @Override
-    public Optional<Weather> findByCityName(String cityName) {
-        List<CityDTO> cities;
+    public Mono<Weather> findByCityName(String cityName) {
+        return Mono
+                .fromCallable(() -> cityDAO.findByCityName(cityName))
+                .flatMap(cityDTOS -> {
+                    if (cityDTOS.size() > 1) {
+                        return Mono.error(TooManyCitiesFoundException::new);
+                    } else if (cityDTOS.size() == 1) {
+                        return Mono.just(cityDTOS.get(0).convert());
+                    } else return Mono.empty();
+                });
 
-        try {
-            cities = cityDAO.findByCityName(cityName);
-        } catch (Exception e) {
-            logger.error(e.getMessage());
-            return Optional.empty();
-        }
-
-        if (cities.size() > 1) {
-            throw new TooManyCitiesFoundException();
-        } else if (cities.size() == 1) {
-            return Optional.of(cities.get(0).convert());
-        } else return Optional.empty();
     }
 
     private CoordinatesDTO getCoordinates(City city) {
