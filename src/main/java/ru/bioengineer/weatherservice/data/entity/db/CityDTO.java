@@ -18,11 +18,11 @@ public class CityDTO implements EntityConverter<Weather> {
     @Column(name = "city_name")
     public String cityName;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "coord_id")
     public CoordinatesDTO coordinates;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "weather_id")
     public WeatherDTO weather;
 

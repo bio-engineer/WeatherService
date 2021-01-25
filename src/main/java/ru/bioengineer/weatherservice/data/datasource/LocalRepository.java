@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import ru.bioengineer.weatherservice.data.datasource.dao.*;
+import ru.bioengineer.weatherservice.data.datasource.dao.CityDAO;
 import ru.bioengineer.weatherservice.data.entity.db.*;
 import ru.bioengineer.weatherservice.domain.datasource.IWeatherRepository;
 import ru.bioengineer.weatherservice.domain.entity.City;
@@ -21,24 +21,10 @@ public class LocalRepository implements IWeatherRepository.ILocalRepository {
     private static final Logger logger = LoggerFactory.getLogger(LocalRepository.class);
 
     private final CityDAO cityDAO;
-    private final CoordinatesDAO coordinatesDAO;
-    private final ParametersDAO parametersDAO;
-    private final WeatherDAO weatherDAO;
-    private final WindDAO windDAO;
 
     @Autowired
-    public LocalRepository(
-            CityDAO cityDAO,
-            CoordinatesDAO coordinatesDAO,
-            ParametersDAO parametersDAO,
-            WeatherDAO weatherDAO,
-            WindDAO windDAO
-    ) {
+    public LocalRepository(CityDAO cityDAO) {
         this.cityDAO = cityDAO;
-        this.coordinatesDAO = coordinatesDAO;
-        this.parametersDAO = parametersDAO;
-        this.weatherDAO = weatherDAO;
-        this.windDAO = windDAO;
     }
 
     @Override
@@ -46,19 +32,9 @@ public class LocalRepository implements IWeatherRepository.ILocalRepository {
         return Mono
                 .fromCallable(() -> {
                     City city = weather.getCity();
+                    CityDTO cityDTO = getCityDTO(weather, weather.getCity(), getCoordinates(city));
 
-                    CoordinatesDTO coordinatesDTO = getCoordinates(city);
-                    WindDTO windDTO = getWind(weather, city.getId());
-                    ParametersDTO paramsDTO = getParams(weather, city.getId());
-                    WeatherDTO weatherDTO = getWeather(weather, city);
-                    CityDTO cityDTO = getCityDTO(weather, city, coordinatesDTO);
-
-                    coordinatesDAO.saveAndFlush(coordinatesDTO);
-                    windDAO.saveAndFlush(windDTO);
-                    parametersDAO.saveAndFlush(paramsDTO);
-                    weatherDAO.saveAndFlush(weatherDTO);
                     cityDAO.saveAndFlush(cityDTO);
-
                     return city.getId();
                 })
                 .map(cityId -> cityDAO.findById(cityId)

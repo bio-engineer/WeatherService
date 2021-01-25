@@ -17,11 +17,11 @@ public final class WeatherDTO {
     @Column(name = "full_description")
     public String fullDescription;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "params_id")
     public ParametersDTO parametersDTO;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "wind_id")
     public WindDTO windDTO;
 
