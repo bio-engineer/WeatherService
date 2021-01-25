@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import ru.bioengineer.weatherservice.domain.datasource.IWeatherRepository;
 import ru.bioengineer.weatherservice.domain.entity.Weather;
-import ru.bioengineer.weatherservice.domain.entity.WeatherRequest;
 import ru.bioengineer.weatherservice.domain.entity.exception.CityNotFound;
 import ru.bioengineer.weatherservice.domain.entity.exception.TooManyCitiesFound;
 import ru.bioengineer.weatherservice.domain.exception.CityNotFoundException;
@@ -35,9 +34,9 @@ public class GetWeatherUseCase {
      *
      * @see IWeatherRepository
      */
-    public Mono<Weather> execute(WeatherRequest request) {
+    public Mono<Weather> execute(String cityName) {
         return weatherRepository
-                .findByCityName(request.getCityName())
+                .findByCityName(cityName)
                 .doOnError(CityNotFoundException.class, CityNotFound::new)
                 .doOnError(TooManyCitiesFoundException.class, TooManyCitiesFound::new);
     }

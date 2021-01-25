@@ -1,12 +1,11 @@
 package ru.bioengineer.weatherservice.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import ru.bioengineer.weatherservice.domain.entity.Weather;
-import ru.bioengineer.weatherservice.domain.entity.WeatherRequest;
 import ru.bioengineer.weatherservice.domain.service.GetWeatherUseCase;
 
 @RestController
@@ -19,8 +18,8 @@ public class ClientController {
         this.getWeatherUseCase = getWeatherUseCase;
     }
 
-    @PostMapping("/weather")
-    public Mono<Weather> getWeatherByCityName(@RequestBody WeatherRequest request) {
-        return getWeatherUseCase.execute(request);
+    @GetMapping("/weather")
+    public Mono<Weather> getWeatherByCityName(@RequestParam(name = "city") String cityName) {
+        return getWeatherUseCase.execute(cityName);
     }
 }

@@ -10,13 +10,10 @@
 **SPRING_DATASOURCE_PASSWORD** - пароль от БД  
 **SPRING_DATASOURCE_URL** - полный URL до БД, например: "jdbc:postgresql://localhost:5432/weather_service"
 
-Для внешнего взаимодействия реализован контроллер, принимающий POST-запрос по адресу "[someUrl]/weather"
+Для внешнего взаимодействия реализован контроллер, принимающий GET-запрос, принимающий на вход имя города
 
-```json
-{
-  "cityName": "Moscow",
-  "lang": "ru"
-}
+```url
+http://localhost:8080/weather?city=Moscow
 ```
 
 Ответ возвращается в формате JSON и имеет следующий вид:
